@@ -2,49 +2,51 @@
 
 # 🩺 SupportPet
 
-**Um pet de suporte flutuante para o seu site.**
-Ele anda pela tela, abre um chat com sua LLM, reage, dorme e segue o cursor.
+**A floating support pet for your website.**
+It walks around the screen, opens a chat powered by your LLM, reacts, sleeps, and follows the cursor.
 
-Vanilla JS · zero dependências · ~12 KB minificado
+Vanilla JS · zero dependencies · ~12 KB minified
+
+**English** · [Português](README.pt-br.md)
 
 </div>
 
 ---
 
-## ✨ O que ele faz
+## ✨ Features
 
-- **Anda sozinho** pela tela e vira para o lado em que se move.
-- **Vira chat com um clique**: voa até o canto e abre o painel; clicar de novo fecha.
-- **Conversa com sua LLM** através de um handler que você pluga (texto pronto ou streaming real).
-- **Renderiza Markdown** seguro nas respostas (negrito, listas, código, links).
-- **Arrasta e solta**: posicione o pet onde quiser (mouse, toque ou caneta).
-- **Modo "segundo plano"**: ao demorar, ele volta a andar e te avisa por balão quando a resposta fica pronta — sem reabrir sozinho.
-- **Reações e emotes**: pulo, giro, "sim/não", corações, confete e mais.
-- **Vida própria**: os olhos seguem o cursor, ele cochila quando ocioso (💤) e muda de expressão (feliz/preocupada).
-- **Acessível**: navegável por teclado e respeita `prefers-reduced-motion`.
+- **Walks on its own** across the screen and faces the direction it moves.
+- **Becomes a chat on click**: flies to the corner and opens the panel; click again to close.
+- **Talks to your LLM** through a handler you plug in (full text or real streaming).
+- **Renders safe Markdown** in replies (bold, lists, code, links).
+- **Drag & drop**: place the pet anywhere (mouse, touch, or pen).
+- **Background mode**: when a reply takes a while, the pet goes back to walking and notifies you with a bubble once the answer is ready — without reopening on its own.
+- **Reactions and emotes**: jump, spin, yes/no, hearts, confetti, and more.
+- **A life of its own**: the eyes follow the cursor, it naps when idle (💤), and changes expression (happy/worried).
+- **Accessible**: keyboard-navigable and respects `prefers-reduced-motion`.
 
 ---
 
-## 🚀 Começando
+## 🚀 Getting started
 
-### 1. Inclua a biblioteca
+### 1. Include the library
 
 ```html
 <script src="src/support-pet.js"></script>
-<!-- ou a versão minificada -->
+<!-- or the minified build -->
 <script src="dist/support-pet.min.js"></script>
 ```
 
-### 2. Inicialize
+### 2. Initialize
 
 ```html
 <script>
   const pet = new SupportPet({
     name: 'Doc',
-    greeting: 'Oi! Posso ajudar? 🩺',
+    greeting: 'Hi! How can I help? 🩺',
     llmHandler: async (text, history) => {
-      // chame SEU backend aqui (veja a seção de segurança)
-      const res = await fetch('/api/suporte', {
+      // call YOUR backend here (see the security section)
+      const res = await fetch('/api/support', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, history })
@@ -56,64 +58,64 @@ Vanilla JS · zero dependências · ~12 KB minificado
 </script>
 ```
 
-Pronto. Abra `examples/demo.html` para ver tudo funcionando (com LLM simulado), ou `examples/basic.html` para o mínimo.
+That's it. Open `examples/demo.html` to see everything in action (with a mocked LLM), or `examples/basic.html` for the bare minimum.
 
 ---
 
-## ⚙️ Opções
+## ⚙️ Options
 
-Todas as opções são passadas no construtor: `new SupportPet({ ... })`.
+All options are passed to the constructor: `new SupportPet({ ... })`.
 
-| Opção | Padrão | Descrição |
+| Option | Default | Description |
 |---|---|---|
-| `name` | `'Doc'` | Nome exibido no chat. |
-| `svg` | `null` | SVG customizado do personagem (string). `null` usa o embutido. |
-| `size` | `72` | Lado do pet, em px. |
-| `walkSpeed` | `55` | Velocidade da caminhada (px/s). |
-| `edgeMargin` | `18` | Distância mínima das bordas. |
-| `pauseRange` | `[800, 2600]` | Faixa (ms) de pausa entre caminhadas. |
-| `corner` | `'bottom-right'` | Canto onde acopla o chat. |
-| `greeting` | `'Oi! Sou o Doc…'` | Mensagem inicial. |
-| `placeholder` | `'Escreva sua dúvida...'` | Placeholder do input. |
-| `markdown` | `true` | Renderiza Markdown nas respostas do bot. |
-| `responseMode` | `'instant'` | `'instant'` (texto de uma vez) ou `'stream'`. |
-| `streamSpeed` | `18` | Velocidade (ms/passo) do efeito máquina de escrever. |
+| `name` | `'Doc'` | Name shown in the chat. |
+| `svg` | `null` | Custom character SVG (string). `null` uses the built-in one. |
+| `size` | `72` | Pet side length, in px. |
+| `walkSpeed` | `55` | Walking speed (px/s). |
+| `edgeMargin` | `18` | Minimum distance from the edges. |
+| `pauseRange` | `[800, 2600]` | Pause range (ms) between walks. |
+| `corner` | `'bottom-right'` | Corner where the chat docks. |
+| `greeting` | `'Hi! …'` | Initial message. |
+| `placeholder` | `'Type your question...'` | Input placeholder. |
+| `markdown` | `true` | Render Markdown in bot replies. |
+| `responseMode` | `'instant'` | `'instant'` (all at once) or `'stream'`. |
+| `streamSpeed` | `18` | Typewriter speed (ms/step). |
 | `llmHandler` | `null` | `async (text, history) => string`. |
-| `llmStreamHandler` | `null` | `async (text, history, onToken) => void` (streaming real). |
-| `detachWhileThinking` | `false` | Trabalha em segundo plano enquanto pensa. |
-| `detachAfter` | `0` | ms até destacar (`0` = sempre; `>0` = só se demorar). |
-| `thinkingBubble` | `'Já tô analisando… 🔍'` | Balão durante o processamento. |
-| `answerBubble` | `'Tenho sua resposta!…'` | Balão de aviso quando a resposta chega. |
-| `autoReactions` | `true` | Reações automáticas (responder, soltar arraste…). |
-| `eyeTracking` | `true` | Pupilas seguem o cursor (mouse/caneta). |
-| `idleSleep` | `true` | Cochila quando ocioso. |
-| `idleSleepAfter` | `15000` | ms parado sem interação até dormir. |
-| `sleepSymbol` | `'💤'` | Símbolo emitido durante o sono. |
-| `startWalking` | `true` | Começa andando ao montar. |
-| `respectReducedMotion` | `true` | Reduz animações se o usuário pediu. |
-| `zIndex` | `2147483000` | z-index do widget. |
-| `events` | *(ver abaixo)* | Nomes dos eventos globais. |
-| `onSummon` / `onDismiss` | `null` | Callbacks de abrir/fechar o chat. |
-| `onUserMessage` / `onReply` | `null` | Callbacks de mensagem do usuário / resposta. |
+| `llmStreamHandler` | `null` | `async (text, history, onToken) => void` (real streaming). |
+| `detachWhileThinking` | `false` | Work in the background while thinking. |
+| `detachAfter` | `0` | ms before detaching (`0` = always; `>0` = only if slow). |
+| `thinkingBubble` | `'…'` | Bubble shown while processing. |
+| `answerBubble` | `'…'` | Bubble shown when the answer is ready. |
+| `autoReactions` | `true` | Automatic reactions (reply, drop after drag…). |
+| `eyeTracking` | `true` | Pupils follow the cursor (mouse/pen). |
+| `idleSleep` | `true` | Naps when idle. |
+| `idleSleepAfter` | `15000` | ms idle without interaction before sleeping. |
+| `sleepSymbol` | `'💤'` | Symbol emitted while sleeping. |
+| `startWalking` | `true` | Start walking on mount. |
+| `respectReducedMotion` | `true` | Reduce animation if the user asked for it. |
+| `zIndex` | `2147483000` | Widget z-index. |
+| `events` | *(see below)* | Global event names. |
+| `onSummon` / `onDismiss` | `null` | Open/close chat callbacks. |
+| `onUserMessage` / `onReply` | `null` | User message / reply callbacks. |
 
 ---
 
 ## 🧩 API
 
 ```js
-pet.mount(parent?)          // injeta no DOM e começa a andar
-pet.unmount()               // remove tudo
-pet.summon()                // voa ao canto e abre o chat
-pet.dismiss()               // fecha o chat e volta a andar
-pet.say(text, { duration }) // balão de fala (sem LLM)
-pet.ask(text)               // injeta uma pergunta do usuário e processa na LLM
-pet.react(type, opts)       // dispara uma reação/emote (ver abaixo)
-pet.sleep() / pet.wake()    // controla a soneca manualmente
-pet.clearHistory({ greeting }) // limpa a conversa (memória + tela)
-pet.setLLMHandler(fn)       // troca o handler em runtime
+pet.mount(parent?)          // inject into the DOM and start walking
+pet.unmount()               // remove everything
+pet.summon()                // fly to the corner and open the chat
+pet.dismiss()               // close the chat and resume walking
+pet.say(text, { duration }) // speech bubble (no LLM)
+pet.ask(text)               // inject a user question and process it through the LLM
+pet.react(type, opts)       // trigger a reaction/emote (see below)
+pet.sleep() / pet.wake()    // control the nap manually
+pet.clearHistory({ greeting }) // clear the conversation (memory + screen)
+pet.setLLMHandler(fn)       // swap the handler at runtime
 ```
 
-### Reações disponíveis
+### Available reactions
 
 `jump` · `nod` · `shake` · `spin` · `wobble` · `dizzy` · `sad` · `hearts` · `confetti`
 Aliases: `happy` → jump, `yes` → nod, `no` → shake, `excited` → wobble, `love` → hearts, `celebrate` → confetti.
@@ -125,30 +127,30 @@ pet.react('confetti');
 
 ---
 
-## 📡 Eventos globais
+## 📡 Global events
 
-Acione o pet de qualquer lugar do site, sem referência direta ao objeto:
+Trigger the pet from anywhere on your site, without a direct reference to the object:
 
 ```js
-window.dispatchEvent(new CustomEvent('petbot:say',     { detail: { text: 'Promoção!' } }));
-window.dispatchEvent(new CustomEvent('petbot:ask',     { detail: { text: 'Qual o preço?' } }));
+window.dispatchEvent(new CustomEvent('petbot:say',     { detail: { text: 'On sale!' } }));
+window.dispatchEvent(new CustomEvent('petbot:ask',     { detail: { text: 'How much is it?' } }));
 window.dispatchEvent(new CustomEvent('petbot:react',   { detail: { type: 'confetti' } }));
 window.dispatchEvent(new CustomEvent('petbot:summon'));
 window.dispatchEvent(new CustomEvent('petbot:dismiss'));
 window.dispatchEvent(new CustomEvent('petbot:clear'));
 ```
 
-Os nomes são configuráveis via `opts.events`.
+Event names are configurable via `opts.events`.
 
 ---
 
-## 🌊 Streaming real
+## 🌊 Real streaming
 
 ```js
 const pet = new SupportPet({
   responseMode: 'stream',
   llmStreamHandler: async (text, history, onToken) => {
-    const res = await fetch('/api/suporte/stream', {
+    const res = await fetch('/api/support/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: text, history })
@@ -158,29 +160,29 @@ const pet = new SupportPet({
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
-      onToken(dec.decode(value, { stream: true })); // ajuste ao formato do seu stream
+      onToken(dec.decode(value, { stream: true })); // adapt to your stream format
     }
   }
 });
 ```
 
-Sem `llmStreamHandler`, o modo `stream` faz um efeito máquina de escrever sobre o texto retornado pelo `llmHandler`.
+Without `llmStreamHandler`, the `stream` mode applies a typewriter effect to the text returned by `llmHandler`.
 
 ---
 
-## 🔒 Segurança
+## 🔒 Security
 
-- **Nunca coloque a API key da LLM no front-end.** O `llmHandler` deve chamar **seu backend**, que conversa com a LLM e devolve apenas o texto. Caso contrário, a chave fica exposta no navegador.
-- O Markdown é **escapado antes** de formatar: HTML vindo da LLM ou do usuário não é injetado, e links só viram `<a>` se forem `http(s):` ou `mailto:` (bloqueia `javascript:`).
-
----
-
-## 🌐 Compatibilidade
-
-Navegadores modernos com suporte a Pointer Events e CSS custom properties (Chrome, Firefox, Safari, Edge). Funciona em desktop e mobile.
+- **Never put your LLM API key in the front-end.** The `llmHandler` should call **your backend**, which talks to the LLM and returns only the text. Otherwise the key is exposed in the browser.
+- Markdown is **escaped before** formatting: HTML coming from the LLM or the user is not injected, and links only become `<a>` if they are `http(s):` or `mailto:` (it blocks `javascript:`).
 
 ---
 
-## 📄 Licença
+## 🌐 Browser support
 
-[MIT](LICENSE) — use à vontade. Lembre-se de preencher seu nome na licença e no `package.json`.
+Modern browsers with Pointer Events and CSS custom properties (Chrome, Firefox, Safari, Edge). Works on desktop and mobile.
+
+---
+
+## 📄 License
+
+[MIT](LICENSE) — use it freely. Remember to fill in your name in the license and in `package.json`.
