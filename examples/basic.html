@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SupportPet — exemplo básico</title>
+</head>
+<body style="font-family:system-ui;padding:40px;max-width:640px;margin:auto;color:#2c3e50">
+  <h1>Exemplo básico</h1>
+  <p>O pet aparece no canto e começa a andar. Clique nele para abrir o chat.
+     O <code>llmHandler</code> abaixo é um eco simples — troque pela chamada ao seu backend.</p>
+
+  <!-- 1. Inclua a lib -->
+  <script src="../src/support-pet.js"></script>
+
+  <!-- 2. Inicialize -->
+  <script>
+    const pet = new SupportPet({
+      name: 'Doc',
+      greeting: 'Oi! Posso ajudar? 🩺',
+      // Em produção, chame SEU backend aqui (nunca exponha a API key no front):
+      llmHandler: async (text, history) => {
+        return 'Você disse: "' + text + '". (resposta de exemplo)';
+      }
+    });
+    pet.mount();
+  </script>
+</body>
+</html>

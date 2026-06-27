@@ -1,0 +1,43 @@
+{
+  "name": "support-pet",
+  "version": "1.0.0",
+  "description": "Pet de suporte flutuante e configurável: anda pela tela, abre um chat com LLM, reage, dorme e segue o cursor. Vanilla JS, zero dependências.",
+  "main": "src/support-pet.js",
+  "module": "src/support-pet.js",
+  "unpkg": "dist/support-pet.min.js",
+  "files": [
+    "src",
+    "dist",
+    "assets",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "terser src/support-pet.js -c -m -o dist/support-pet.min.js",
+    "serve": "npx serve examples"
+  },
+  "keywords": [
+    "chatbot",
+    "support",
+    "widget",
+    "assistant",
+    "llm",
+    "mascot",
+    "pet",
+    "vanilla-js",
+    "no-dependencies"
+  ],
+  "author": "Seu Nome <voce@exemplo.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SEU_USUARIO/support-pet.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SEU_USUARIO/support-pet/issues"
+  },
+  "homepage": "https://github.com/SEU_USUARIO/support-pet#readme",
+  "devDependencies": {
+    "terser": "^5.0.0"
+  }
+}
