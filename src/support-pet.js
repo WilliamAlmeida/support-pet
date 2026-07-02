@@ -20,6 +20,15 @@
  *   pet.setLLMHandler(fn)        -> troca o handler em runtime
  *   pet.mount(parent) / pet.unmount()
  *
+ * Modo tour (caminhada dirigida — base p/ tours guiados, ver support-pet-tour.js):
+ *   pet.beginTour()              -> entra no modo tour: para o passeio e desliga
+ *                                   chat/drag/soneca (o pet fica "profissional")
+ *   pet.endTour()                -> sai do modo tour e volta a passear
+ *   pet.walkTo(x, y, { onArrive })          -> caminha até a coordenada e avisa ao chegar
+ *   pet.walkToElement(el, { side, gap, onArrive }) -> caminha até a lateral de um elemento
+ *   pet.placeAt(x, y)            -> teleporte instantâneo (reancoragem em scroll/resize)
+ *   (com prefers-reduced-motion, walkTo/walkToElement teleportam)
+ *
  * Arraste o pet (mouse/toque) e solte onde quiser — ele segue andando dali.
  * Tocar/clicar no pet alterna o chat: abre se estiver andando, fecha se já aberto.
  * Modo de resposta: opts.responseMode = 'instant' (padrão) ou 'stream'.
@@ -157,6 +166,7 @@
         global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches;
       // bind
       this._tick = this._tick.bind(this);
+      this._escortTick = this._escortTick.bind(this);
       this._onResize = this._onResize.bind(this);
       this._onPointerDown = this._onPointerDown.bind(this);
       this._onPointerMove = this._onPointerMove.bind(this);
@@ -167,6 +177,8 @@
       this._dragThresh = 6; // px p/ diferenciar clique de arraste
       this._asleep = false;
       this._lastActivity = 0;
+      this._touring = false;   // modo tour: caminhada dirigida, sem chat/drag/soneca
+      this._escort = null;     // { x, y, onArrive } destino dirigido atual
     }
 
     /* ---------- ciclo de vida ---------- */
@@ -387,6 +399,7 @@
     }
 
     _sleep() {
+      if (this._touring) return; // sem soneca no meio do tour
       if (this._asleep || this.state !== 'walking') return;
       this._asleep = true;
       this.root.classList.add('sp-asleep');
@@ -423,6 +436,116 @@
     sleep() { if (this.state === 'walking') this._sleep(); return this; }
     /** Acorda o pet (público). */
     wake() { this._wake(); return this; }
+
+    /* ---------- modo tour (caminhada dirigida) ---------- */
+
+    /** Entra no modo tour: para o random-walk e desliga chat/drag/soneca. */
+    beginTour() {
+      if (!this._mounted) return this;
+      this._touring = true;
+      this._wake();
+      this._stopWalk();
+      cancelAnimationFrame(this._raf);
+      this._escort = null;
+      this.state = 'escorting';
+      this.panel.classList.remove('sp-panel--open');
+      clearTimeout(this._bubbleTimer);
+      this.bubble.classList.remove('sp-bubble--show', 'sp-bubble--notify');
+      return this;
+    }
+
+    /** Sai do modo tour e volta a passear. */
+    endTour() {
+      if (!this._mounted) return this;
+      this._touring = false;
+      this._escort = null;
+      cancelAnimationFrame(this._raf);
+      this.state = 'walking';
+      if (!this._reduced) this._startWalk();
+      return this;
+    }
+
+    /** Teleporte instantâneo (reancoragem durante scroll/resize de um tour). */
+    placeAt(x, y) {
+      if (!this._mounted) return this;
+      const b = this._bounds();
+      this.x = Math.min(Math.max(x, b.minX), b.maxX);
+      this.y = Math.min(Math.max(y, b.minY), b.maxY);
+      this._applyTransform();
+      return this;
+    }
+
+    /** Caminha até (x, y) e chama onArrive ao chegar. Com reduced-motion, teleporta. */
+    walkTo(x, y, { onArrive = null } = {}) {
+      if (!this._mounted) return this;
+      const b = this._bounds();
+      const tx = Math.min(Math.max(x, b.minX), b.maxX);
+      const ty = Math.min(Math.max(y, b.minY), b.maxY);
+      this._wake();
+      this._stopWalk();
+      cancelAnimationFrame(this._raf);
+      this.state = 'escorting';
+      clearTimeout(this._bubbleTimer);
+      this.bubble.classList.remove('sp-bubble--show');
+      if (this._reduced) {
+        this.x = tx; this.y = ty;
+        this._applyTransform();
+        if (onArrive) onArrive();
+        return this;
+      }
+      this.dir = (tx >= this.x) ? 1 : -1;
+      this._faceSprite();
+      this._escort = { x: tx, y: ty, onArrive };
+      this.root.classList.add('sp-walking');
+      this._lastTs = 0;
+      this._raf = requestAnimationFrame(this._escortTick);
+      return this;
+    }
+
+    /** Caminha até a lateral de um elemento da página (side: left|right|top|bottom). */
+    walkToElement(el, { side = 'left', gap = 14, onArrive = null } = {}) {
+      if (!el || !this._mounted) return this;
+      const r = el.getBoundingClientRect();
+      const s = this.cfg.size;
+      let x, y;
+      switch (side) {
+        case 'right': x = r.right + gap; y = r.top + r.height / 2 - s / 2; break;
+        case 'top': x = r.left + r.width / 2 - s / 2; y = r.top - s - gap; break;
+        case 'bottom': x = r.left + r.width / 2 - s / 2; y = r.bottom + gap; break;
+        default: x = r.left - s - gap; y = r.top + r.height / 2 - s / 2; break;
+      }
+      return this.walkTo(x, y, { onArrive });
+    }
+
+    _escortTick(ts) {
+      if (this.state !== 'escorting' || !this._escort) return;
+      if (!this._lastTs) this._lastTs = ts;
+      const dt = Math.min(0.05, (ts - this._lastTs) / 1000);
+      this._lastTs = ts;
+
+      const t = this._escort;
+      const dx = t.x - this.x, dy = t.y - this.y;
+      const dist = Math.hypot(dx, dy);
+      // No tour o pet anda mais rápido que no passeio para não atrasar o usuário.
+      const step = Math.max(this.cfg.walkSpeed * 4, 300) * dt;
+
+      if (dist <= step || dist < 1) {
+        this.x = t.x; this.y = t.y;
+        this._applyTransform();
+        this.root.classList.remove('sp-walking');
+        const cb = t.onArrive;
+        this._escort = null;
+        if (cb) cb();
+        return;
+      }
+
+      this.x += (dx / dist) * step;
+      this.y += (dy / dist) * step;
+      const nd = dx < 0 ? -1 : 1;
+      if (nd !== this.dir) { this.dir = nd; this._faceSprite(); }
+      this._applyTransform();
+      this._raf = requestAnimationFrame(this._escortTick);
+    }
 
     /* ---------- estilos ---------- */
 
@@ -627,6 +750,7 @@
     _bindEvents() {
       this.root.addEventListener('pointerdown', this._onPointerDown);
       this.root.addEventListener('keydown', (e) => {
+        if (this._touring) return;
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           this._noteActivity();
@@ -754,6 +878,7 @@
 
     _onPointerDown(e) {
       this._noteActivity();
+      if (this._touring) return; // durante o tour o pet não arrasta nem abre chat
       if (this.state !== 'walking' && this.state !== 'chatting') return; // livre OU chat aberto
       if (e.button != null && e.button !== 0) return; // só botão principal
       const d = this._drag;
