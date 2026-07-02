@@ -184,7 +184,7 @@ The optional `support-pet-tour.js` module turns the pet into a product-tour guid
 
 **API:** `tour.start(index?)` · `tour.next()` · `tour.prev()` · `tour.destroy()`.
 
-**Behavior:** `Esc` closes, `←`/`→` navigate, clicking outside closes; steps whose target is missing/hidden are skipped; on screens narrower than 640px the card becomes a bottom sheet; the spotlight and card re-anchor on scroll/resize; with `prefers-reduced-motion` the pet teleports instead of walking. When the tour ends, the pet goes back to wandering around.
+**Behavior:** `Esc` closes, `←`/`→` navigate (ignored while a text field is focused); clicking outside closes, but **clicks inside the highlight pass through to the page** — the overlay has a real hole over the target, so a step can say "click here" without ending the tour, and if the interaction moves or re-renders the target everything re-anchors automatically; steps whose target is missing/hidden are skipped; on screens narrower than 640px the card becomes a bottom sheet; the spotlight and card re-anchor on scroll/resize; with `prefers-reduced-motion` the pet teleports instead of walking. When the tour ends, the pet goes back to wandering around.
 
 Open `examples/tour.html` for a working demo.
 

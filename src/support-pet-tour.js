@@ -33,7 +33,10 @@
  *   onClose      -> chamado quando o tour é fechado antes do fim (Esc, X, clique-fora)
  *
  * API: tour.start(index?) / tour.next() / tour.prev() / tour.destroy()
- * Teclado: Esc fecha, ←/→ navegam. Clique fora do card também fecha.
+ * Teclado: Esc fecha, ←/→ navegam (exceto com o foco em um campo de texto).
+ * Cliques DENTRO do spotlight passam para a página (o overlay tem um furo real),
+ * então o passo pode pedir "clique aqui" sem encerrar o tour; clique fora fecha.
+ * Um watcher reancora spotlight/card/pet quando a interação move o alvo.
  * Mobile (<640px): o card vira bottom-sheet. Passos com alvo ausente são pulados.
  * Com prefers-reduced-motion, o pet teleporta em vez de caminhar.
  */
@@ -122,6 +125,8 @@
       this._destroyed = false;
       this._stepToken = 0;           // invalida callbacks assíncronos de passos anteriores
       this._repositionRaf = null;
+      this._watcherRaf = null;
+      this._lastRect = null;         // último rect "assentado" do alvo (null = passo montando)
       this._currentEl = null;
       this._overlay = null;
       this._spotlight = null;
@@ -129,6 +134,7 @@
 
       this._onKeydown = this._onKeydown.bind(this);
       this._reposition = this._reposition.bind(this);
+      this._watchTarget = this._watchTarget.bind(this);
     }
 
     /* ---------- API pública ---------- */
@@ -142,6 +148,7 @@
       global.addEventListener('resize', this._reposition);
       global.addEventListener('scroll', this._reposition, true);
       document.addEventListener('keydown', this._onKeydown);
+      this._watcherRaf = requestAnimationFrame(this._watchTarget);
       this._showStep(index, 1);
       return this;
     }
@@ -278,6 +285,19 @@
       s.top = (rect.top - pad) + 'px';
       s.width = (rect.width + pad * 2) + 'px';
       s.height = (rect.height + pad * 2) + 'px';
+      this._cutOverlayHole(rect.left - pad, rect.top - pad, rect.width + pad * 2, rect.height + pad * 2);
+    }
+
+    // Recorta o overlay ao redor do spotlight: cliques dentro do destaque passam
+    // direto para a página (o passo pode pedir "clique aqui" sem matar o tour);
+    // cliques fora continuam caindo no overlay, que fecha o tour.
+    _cutOverlayHole(left, top, width, height) {
+      const right = left + width;
+      const bottom = top + height;
+      this._overlay.style.clipPath =
+        'polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 ' + top + 'px, '
+        + left + 'px ' + top + 'px, ' + left + 'px ' + bottom + 'px, '
+        + right + 'px ' + bottom + 'px, ' + right + 'px ' + top + 'px, 0 ' + top + 'px)';
     }
 
     _cardPosition(rect, step) {
@@ -347,6 +367,7 @@
       if (!this.active || !this._currentEl) return;
 
       const rect = this._currentEl.getBoundingClientRect();
+      this._lastRect = rect;
       this._positionSpotlight(rect);
 
       const pos = this._cardPosition(rect, this.steps[this.index] || {});
@@ -365,6 +386,11 @@
             this._card.classList.add('spt-card--show');
           },
         });
+      } else if (this.pet._escort) {
+        // Ainda caminhando até o passo: só atualiza o destino, sem teleportar,
+        // para não cortar a animação nem perder o onArrive que mostra o card.
+        this.pet._escort.x = petPos.x;
+        this.pet._escort.y = petPos.y;
       } else {
         this.pet.placeAt(petPos.x, petPos.y);
       }
@@ -376,6 +402,27 @@
         this._repositionRaf = null;
         this._layoutStep(false);
       });
+    }
+
+    // Interações dentro do spotlight (liberadas pelo furo do overlay) podem
+    // re-renderizar a página sem disparar scroll/resize — este watcher reancora
+    // tudo quando o alvo muda de lugar, tamanho ou nó no DOM.
+    _watchTarget() {
+      if (!this.active) return;
+
+      if (this._currentEl && !this._currentEl.isConnected) {
+        this._currentEl = this._findStepElement(this.index) || this._currentEl;
+      }
+
+      if (this._lastRect && this._currentEl && this._currentEl.isConnected) {
+        const a = this._lastRect;
+        const b = this._currentEl.getBoundingClientRect();
+        const moved = Math.abs(a.left - b.left) > 0.5 || Math.abs(a.top - b.top) > 0.5
+          || Math.abs(a.width - b.width) > 0.5 || Math.abs(a.height - b.height) > 0.5;
+        if (moved) this._layoutStep(false);
+      }
+
+      this._watcherRaf = requestAnimationFrame(this._watchTarget);
     }
 
     /* ---------- navegação ---------- */
@@ -408,6 +455,7 @@
 
       this.index = resolved;
       this._stepToken += 1;
+      this._lastRect = null;
       const token = this._stepToken;
       this._currentEl = this._findStepElement(this.index);
       this._card.classList.remove('spt-card--show');
@@ -442,6 +490,10 @@
     _onKeydown(event) {
       if (!this.active) return;
       if (event.key === 'Escape') this._end(false);
+      // Setas só navegam o tour se o usuário não estiver digitando num campo
+      // (a interação com o elemento destacado é liberada pelo furo do overlay).
+      const t = event.target;
+      if (t && t.matches && (t.matches('input, textarea, select') || t.isContentEditable)) return;
       if (event.key === 'ArrowRight') this._handleNext();
       if (event.key === 'ArrowLeft') this.prev();
     }
@@ -455,6 +507,7 @@
       this._destroyed = true;
       this._stepToken += 1;
       cancelAnimationFrame(this._repositionRaf);
+      cancelAnimationFrame(this._watcherRaf);
       global.removeEventListener('resize', this._reposition);
       global.removeEventListener('scroll', this._reposition, true);
       document.removeEventListener('keydown', this._onKeydown);

@@ -184,7 +184,7 @@ O módulo opcional `support-pet-tour.js` transforma o pet num guia de product to
 
 **API:** `tour.start(index?)` · `tour.next()` · `tour.prev()` · `tour.destroy()`.
 
-**Comportamento:** `Esc` fecha, `←`/`→` navegam, clique fora fecha; passos com alvo ausente/oculto são pulados; abaixo de 640px o card vira bottom-sheet; spotlight e card se reancoram em scroll/resize; com `prefers-reduced-motion` o pet teleporta em vez de caminhar. Ao terminar, o pet volta a passear pela tela.
+**Comportamento:** `Esc` fecha, `←`/`→` navegam (ignoradas quando o foco está num campo de texto); clique fora fecha, mas **cliques dentro do destaque passam para a página** — o overlay tem um furo real sobre o alvo, então um passo pode pedir "clique aqui" sem encerrar o tour, e se a interação mover ou re-renderizar o alvo tudo se reancora sozinho; passos com alvo ausente/oculto são pulados; abaixo de 640px o card vira bottom-sheet; spotlight e card se reancoram em scroll/resize; com `prefers-reduced-motion` o pet teleporta em vez de caminhar. Ao terminar, o pet volta a passear pela tela.
 
 Abra `examples/tour.html` para uma demo funcional.
 

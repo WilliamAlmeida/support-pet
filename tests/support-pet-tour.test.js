@@ -141,6 +141,63 @@ describe('SupportPetTour', () => {
     tour.destroy();
   });
 
+  it('recorta um furo no overlay sobre o spotlight (clique no alvo passa para a página)', () => {
+    const target = globalThis.makeTarget({ left: 200, top: 150, width: 120, height: 40 });
+
+    const tour = startTour([{ element: target, title: 'A', description: '...' }]);
+
+    // furo = rect do alvo + stagePadding (10): left 190, top 140, right 330, bottom 200
+    const clip = document.querySelector('.spt-overlay').style.clipPath;
+    expect(clip).toContain('polygon');
+    expect(clip).toContain('190px 140px');
+    expect(clip).toContain('330px 200px');
+
+    // clique fora (no overlay) continua fechando
+    document.querySelector('.spt-overlay').click();
+    expect(document.querySelector('.spt-card')).toBeNull();
+
+    tour.destroy();
+  });
+
+  it('reancora spotlight/card quando o alvo muda de lugar (watcher por rAF)', () => {
+    const target = globalThis.makeTarget({ left: 200, top: 150, width: 120, height: 40 });
+
+    const tour = startTour([{ element: target, title: 'A', description: '...' }]);
+    expect(document.querySelector('.spt-spotlight').style.left).toBe('190px');
+
+    // a interação do usuário re-renderiza a página e o alvo desce 100px
+    const moved = { left: 200, top: 250, width: 120, height: 40 };
+    const full = { ...moved, right: moved.left + moved.width, bottom: moved.top + moved.height, x: moved.left, y: moved.top, toJSON: () => full };
+    target.getBoundingClientRect = () => full;
+
+    globalThis.flushFrames(2);
+
+    expect(document.querySelector('.spt-spotlight').style.top).toBe('240px');
+    expect(document.querySelector('.spt-overlay').style.clipPath).toContain('190px 240px');
+
+    tour.destroy();
+  });
+
+  it('setas não navegam o tour enquanto o foco está num campo de texto', () => {
+    const target = globalThis.makeTarget();
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+
+    const tour = startTour([
+      { element: target, title: 'A', description: '...' },
+      { element: target, title: 'B', description: '...' },
+    ]);
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(document.querySelector('.spt-card__progress').textContent).toBe('1 de 2');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+    vi.advanceTimersByTime(80);
+    expect(document.querySelector('.spt-card__progress').textContent).toBe('2 de 2');
+
+    tour.destroy();
+  });
+
   it('reutiliza uma instância de SupportPet fornecida', () => {
     const target = globalThis.makeTarget();
     const pet = new window.SupportPet({ startWalking: false, greeting: null }).mount();

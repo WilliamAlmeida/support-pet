@@ -15,6 +15,11 @@ O formato segue, de forma simplificada, o [Keep a Changelog](https://keepachange
   ausente são pulados, bottom-sheet no mobile, reancoragem em scroll/resize, `onNext`
   por passo para fluxos que abrem drawers/menus, `onFinish`/`onClose`, CSS injetado em
   runtime com dark mode via `prefers-color-scheme`.
+- **Interação dentro do spotlight**: o overlay tem um furo real (clip-path) sobre o alvo —
+  cliques no elemento destacado passam para a página em vez de fechar o tour, então um
+  passo pode pedir "clique aqui". Um watcher por rAF reancora spotlight/card/pet quando a
+  interação move, redimensiona ou re-renderiza o alvo, e as setas ←/→ são ignoradas
+  enquanto o foco está num campo de texto.
 - Exemplo `examples/tour.html` demonstrando o tour (scroll automático, `onNext`, reinício).
 - Testes (Vitest + jsdom) para o core e o tour, e CI no GitHub Actions (test + build).
 
