@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SupportPet — Tour guiado</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: #f2f7fa;
+      color: #2c3e50;
+      min-height: 160vh; /* página alta de propósito, p/ ver o scroll do tour */
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 22px;
+      background: #fff;
+      border-bottom: 1px solid #e3eef2;
+      position: sticky;
+      top: 0;
+    }
+    header h1 { font-size: 17px; margin: 0; }
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 9px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #34495e;
+      color: #fff;
+    }
+    .btn--ghost { background: #eef4f7; color: #34495e; }
+    main { max-width: 860px; margin: 28px auto; padding: 0 18px; display: grid; gap: 16px; }
+    .card {
+      background: #fff;
+      border: 1px solid #e3eef2;
+      border-radius: 14px;
+      padding: 18px;
+    }
+    .card h2 { margin: 0 0 6px; font-size: 15px; }
+    .card p { margin: 0; font-size: 13.5px; color: #5b7180; line-height: 1.5; }
+    #painel-secreto { display: none; }
+    #painel-secreto.aberto { display: block; border-color: #7ec8e3; }
+    footer { text-align: center; padding: 40px 0 60px; color: #8aa0ad; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 id="logo">🩺 Minha Clínica</h1>
+    <div>
+      <button class="btn--ghost btn" id="btn-relatorios">Relatórios</button>
+      <button class="btn" id="btn-novo">+ Novo agendamento</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="card" id="card-agenda">
+      <h2>📅 Agenda do dia</h2>
+      <p>Aqui ficam os agendamentos de hoje. Este card é o segundo passo do tour.</p>
+    </div>
+
+    <div class="card" id="card-pacientes">
+      <h2>🧑‍⚕️ Pacientes</h2>
+      <p>Cadastro e histórico dos pacientes. O tour rola a página até aqui sozinho.</p>
+    </div>
+
+    <div class="card" id="painel-secreto">
+      <h2>🎉 Painel aberto pelo tour!</h2>
+      <p>Este card estava oculto — o passo anterior usou <code>onNext</code> para abri-lo antes de avançar.
+        É assim que um tour real abre drawers/menus no meio do caminho.</p>
+    </div>
+
+    <div class="card">
+      <h2>Reiniciar</h2>
+      <p><button class="btn" id="btn-tour">▶ Começar o tour de novo</button></p>
+    </div>
+  </main>
+
+  <footer>SupportPet + SupportPetTour — examples/tour.html</footer>
+
+  <script src="../src/support-pet.js"></script>
+  <script src="../src/support-pet-tour.js"></script>
+  <script>
+    const criarTour = () => new SupportPetTour({
+      steps: [
+        {
+          element: '#logo',
+          title: 'Bem-vindo! 👋',
+          description: 'Eu sou o Doc e vou te mostrar a casa. Use <b>←/→</b> para navegar e <b>Esc</b> para sair.',
+          side: 'bottom',
+        },
+        {
+          element: '#card-agenda',
+          title: 'Agenda do dia',
+          description: 'Tudo que acontece hoje fica aqui. Repara no spotlight destacando o card.',
+          side: 'right',
+          align: 'center',
+        },
+        {
+          element: '#card-pacientes',
+          title: 'Pacientes',
+          description: 'A página rola sozinha até o alvo — eu vou andando atrás. 🚶',
+          side: 'top',
+        },
+        {
+          element: '#btn-novo',
+          title: 'Criar agendamento',
+          description: 'Este botão abriria o formulário. No próximo passo eu abro um painel escondido usando <code>onNext</code>.',
+          side: 'bottom',
+          align: 'end',
+          doneText: 'Abrir painel',
+          onNext: (el, step, tour) => {
+            document.getElementById('painel-secreto').classList.add('aberto');
+            tour.next();
+          },
+        },
+        {
+          element: '#painel-secreto',
+          title: 'Painel revelado',
+          description: 'O passo anterior abriu este card antes de avançar — igual a abrir um drawer num app real.',
+          side: 'top',
+          doneText: 'Concluir 🎉',
+        },
+      ],
+      onFinish: () => {
+        // O pet volta a passear sozinho; um agrado final:
+        window.dispatchEvent(new CustomEvent('petbot:react', { detail: { type: 'confetti' } }));
+        window.dispatchEvent(new CustomEvent('petbot:say', { detail: { text: 'Tour concluído! 🎉' } }));
+      },
+    });
+
+    document.getElementById('btn-tour').addEventListener('click', () => {
+      document.getElementById('painel-secreto').classList.remove('aberto');
+      criarTour().start();
+    });
+
+    // inicia sozinho ao abrir a página
+    criarTour().start();
+  </script>
+</body>
+</html>

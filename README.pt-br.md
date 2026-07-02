@@ -3,9 +3,9 @@
 # 🩺 SupportPet
 
 **Um pet de suporte flutuante para o seu site.**
-Ele anda pela tela, abre um chat com sua LLM, reage, dorme e segue o cursor.
+Ele anda pela tela, abre um chat com sua LLM, reage, dorme, segue o cursor — e guia tours pela sua interface.
 
-Vanilla JS · zero dependências · ~12 KB minificado
+Vanilla JS · zero dependências · core ~37 KB min (~11 KB gzip) · módulo de tour opcional ~12 KB min (~4 KB gzip)
 
 [English](README.md) · **Português**
 
@@ -23,6 +23,7 @@ Vanilla JS · zero dependências · ~12 KB minificado
 - **Modo "segundo plano"**: ao demorar, ele volta a andar e te avisa por balão quando a resposta fica pronta — sem reabrir sozinho.
 - **Reações e emotes**: pulo, giro, "sim/não", corações, confete e mais.
 - **Vida própria**: os olhos seguem o cursor, ele cochila quando ocioso (💤) e muda de expressão (feliz/preocupada).
+- **Tours guiados** *(novo na 1.1)*: o pet caminha até cada elemento da página e o apresenta num card ancorado com spotlight — veja [Tour guiado](#-tour-guiado).
 - **Acessível**: navegável por teclado e respeita `prefers-reduced-motion`.
 
 ---
@@ -113,6 +114,13 @@ pet.react(type, opts)       // dispara uma reação/emote (ver abaixo)
 pet.sleep() / pet.wake()    // controla a soneca manualmente
 pet.clearHistory({ greeting }) // limpa a conversa (memória + tela)
 pet.setLLMHandler(fn)       // troca o handler em runtime
+
+// Modo tour (caminhada dirigida — usado pelo support-pet-tour.js, ou monte o seu)
+pet.beginTour()             // para o passeio; desliga chat/drag/soneca
+pet.endTour()               // sai do modo tour e volta a passear
+pet.walkTo(x, y, { onArrive })                  // caminha até a coordenada e chama onArrive
+pet.walkToElement(el, { side, gap, onArrive })  // caminha até a lateral de um elemento
+pet.placeAt(x, y)           // teleporte instantâneo (reancoragem em scroll/resize)
 ```
 
 ### Reações disponíveis
@@ -141,6 +149,44 @@ window.dispatchEvent(new CustomEvent('petbot:clear'));
 ```
 
 Os nomes são configuráveis via `opts.events`.
+
+---
+
+## 🧭 Tour guiado
+
+O módulo opcional `support-pet-tour.js` transforma o pet num guia de product tour: ele caminha até cada elemento, um card com o conteúdo do passo ancora ao lado, e um spotlight escurece o resto da página.
+
+```html
+<script src="src/support-pet.js"></script>
+<script src="src/support-pet-tour.js"></script>
+<script>
+  const tour = new SupportPetTour({
+    steps: [
+      { element: '#menu', title: 'Menu', description: 'Tudo começa por aqui.' },
+      { element: '#novo-item', title: 'Criar', description: 'Clique para criar seu primeiro item.', side: 'left' },
+      {
+        element: '#salvar',
+        title: 'Salvar',
+        description: 'Este botão abre o formulário.',
+        doneText: 'Abrir formulário',
+        onNext: (el, step, tour) => { el.click(); tour.next(); }, // você decide quando avançar
+      },
+    ],
+    onFinish: () => console.log('tour concluído!'),
+  });
+  tour.start();
+</script>
+```
+
+**Formato do passo:** `element` (seletor ou `Element`, re-consultado a cada exibição), `title`, `description` (aceita HTML), `side` (`'bottom'` padrão · `'top'` · `'left'` · `'right'`), `align` (`'start'` padrão · `'center'` · `'end'`), `doneText` (rótulo do botão no último passo) e `onNext(el, step, tour)` — quando presente, o botão Próximo **não** avança sozinho; o callback decide (ótimo para abrir drawers/menus no meio do tour).
+
+**Opções do construtor:** `steps` (obrigatório), `pet` (reutiliza um `SupportPet` existente; senão o tour cria o próprio), `stagePadding` (respiro do spotlight, padrão `10`), `labels` (`{ next, prev, done }`), `onFinish`, `onClose`.
+
+**API:** `tour.start(index?)` · `tour.next()` · `tour.prev()` · `tour.destroy()`.
+
+**Comportamento:** `Esc` fecha, `←`/`→` navegam, clique fora fecha; passos com alvo ausente/oculto são pulados; abaixo de 640px o card vira bottom-sheet; spotlight e card se reancoram em scroll/resize; com `prefers-reduced-motion` o pet teleporta em vez de caminhar. Ao terminar, o pet volta a passear pela tela.
+
+Abra `examples/tour.html` para uma demo funcional.
 
 ---
 
@@ -185,4 +231,4 @@ Navegadores modernos com suporte a Pointer Events e CSS custom properties (Chrom
 
 ## 📄 Licença
 
-[MIT](LICENSE) — use à vontade. Lembre-se de preencher seu nome na licença e no `package.json`.
+[MIT](LICENSE) — use à vontade.

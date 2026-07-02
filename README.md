@@ -3,9 +3,9 @@
 # 🩺 SupportPet
 
 **A floating support pet for your website.**
-It walks around the screen, opens a chat powered by your LLM, reacts, sleeps, and follows the cursor.
+It walks around the screen, opens a chat powered by your LLM, reacts, sleeps, follows the cursor — and guides users through your UI.
 
-Vanilla JS · zero dependencies · ~12 KB minified
+Vanilla JS · zero dependencies · core ~37 KB min (~11 KB gzip) · optional tour module ~12 KB min (~4 KB gzip)
 
 **English** · [Português](README.pt-br.md)
 
@@ -23,6 +23,7 @@ Vanilla JS · zero dependencies · ~12 KB minified
 - **Background mode**: when a reply takes a while, the pet goes back to walking and notifies you with a bubble once the answer is ready — without reopening on its own.
 - **Reactions and emotes**: jump, spin, yes/no, hearts, confetti, and more.
 - **A life of its own**: the eyes follow the cursor, it naps when idle (💤), and changes expression (happy/worried).
+- **Guided tours** *(new in 1.1)*: the pet walks to each element on the page and presents it in an anchored card with a spotlight — see [Guided tour](#-guided-tour).
 - **Accessible**: keyboard-navigable and respects `prefers-reduced-motion`.
 
 ---
@@ -113,6 +114,13 @@ pet.react(type, opts)       // trigger a reaction/emote (see below)
 pet.sleep() / pet.wake()    // control the nap manually
 pet.clearHistory({ greeting }) // clear the conversation (memory + screen)
 pet.setLLMHandler(fn)       // swap the handler at runtime
+
+// Tour mode (directed walking — used by support-pet-tour.js, or roll your own)
+pet.beginTour()             // stop wandering; disable chat/drag/nap
+pet.endTour()               // leave tour mode and resume wandering
+pet.walkTo(x, y, { onArrive })                  // walk to a coordinate, then call onArrive
+pet.walkToElement(el, { side, gap, onArrive })  // walk to the side of an element
+pet.placeAt(x, y)           // instant teleport (re-anchoring on scroll/resize)
 ```
 
 ### Available reactions
@@ -141,6 +149,44 @@ window.dispatchEvent(new CustomEvent('petbot:clear'));
 ```
 
 Event names are configurable via `opts.events`.
+
+---
+
+## 🧭 Guided tour
+
+The optional `support-pet-tour.js` module turns the pet into a product-tour guide: it walks to each element, a card with the step content anchors next to it, and a spotlight dims the rest of the page.
+
+```html
+<script src="src/support-pet.js"></script>
+<script src="src/support-pet-tour.js"></script>
+<script>
+  const tour = new SupportPetTour({
+    steps: [
+      { element: '#menu', title: 'Menu', description: 'Everything starts here.' },
+      { element: '#new-item', title: 'Create', description: 'Click to create your first item.', side: 'left' },
+      {
+        element: '#save',
+        title: 'Save',
+        description: 'This button opens the form.',
+        doneText: 'Open form',
+        onNext: (el, step, tour) => { el.click(); tour.next(); }, // you decide when to advance
+      },
+    ],
+    onFinish: () => console.log('tour completed!'),
+  });
+  tour.start();
+</script>
+```
+
+**Step format:** `element` (selector or `Element`, re-queried on every show), `title`, `description` (HTML allowed), `side` (`'bottom'` default · `'top'` · `'left'` · `'right'`), `align` (`'start'` default · `'center'` · `'end'`), `doneText` (last-step button label), and `onNext(el, step, tour)` — when present, the Next button does **not** advance by itself; the callback decides (great for opening drawers/menus mid-tour).
+
+**Constructor options:** `steps` (required), `pet` (reuse an existing `SupportPet`; otherwise the tour creates its own), `stagePadding` (spotlight breathing room, default `10`), `labels` (`{ next, prev, done }` — defaults in pt-BR, override for your language), `onFinish`, `onClose`.
+
+**API:** `tour.start(index?)` · `tour.next()` · `tour.prev()` · `tour.destroy()`.
+
+**Behavior:** `Esc` closes, `←`/`→` navigate, clicking outside closes; steps whose target is missing/hidden are skipped; on screens narrower than 640px the card becomes a bottom sheet; the spotlight and card re-anchor on scroll/resize; with `prefers-reduced-motion` the pet teleports instead of walking. When the tour ends, the pet goes back to wandering around.
+
+Open `examples/tour.html` for a working demo.
 
 ---
 
@@ -185,4 +231,4 @@ Modern browsers with Pointer Events and CSS custom properties (Chrome, Firefox, 
 
 ## 📄 License
 
-[MIT](LICENSE) — use it freely. Remember to fill in your name in the license and in `package.json`.
+[MIT](LICENSE) — use it freely.
