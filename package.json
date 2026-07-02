@@ -1,19 +1,31 @@
 {
   "name": "support-pet",
-  "version": "1.0.0",
-  "description": "Pet de suporte flutuante e configurável: anda pela tela, abre um chat com LLM, reage, dorme e segue o cursor. Vanilla JS, zero dependências.",
+  "version": "1.1.0",
+  "description": "Pet de suporte flutuante e configurável: anda pela tela, abre um chat com LLM, reage, dorme, segue o cursor e guia tours pela interface. Vanilla JS, zero dependências.",
   "main": "src/support-pet.js",
-  "module": "src/support-pet.js",
   "unpkg": "dist/support-pet.min.js",
+  "exports": {
+    ".": {
+      "require": "./src/support-pet.js",
+      "default": "./src/support-pet.js"
+    },
+    "./tour": {
+      "require": "./src/support-pet-tour.js",
+      "default": "./src/support-pet-tour.js"
+    },
+    "./dist/*": "./dist/*"
+  },
   "files": [
     "src",
     "dist",
     "assets",
     "README.md",
+    "README.pt-br.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "terser src/support-pet.js -c -m -o dist/support-pet.min.js",
+    "build": "terser src/support-pet.js -c -m -o dist/support-pet.min.js && terser src/support-pet-tour.js -c -m -o dist/support-pet-tour.min.js",
+    "test": "vitest run",
     "serve": "npx serve examples"
   },
   "keywords": [
@@ -24,20 +36,25 @@
     "llm",
     "mascot",
     "pet",
+    "tour",
+    "onboarding",
+    "product-tour",
     "vanilla-js",
     "no-dependencies"
   ],
-  "author": "Seu Nome <voce@exemplo.com>",
+  "author": "William Almeida (https://github.com/WilliamAlmeida)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SEU_USUARIO/support-pet.git"
+    "url": "https://github.com/WilliamAlmeida/support-pet.git"
   },
   "bugs": {
-    "url": "https://github.com/SEU_USUARIO/support-pet/issues"
+    "url": "https://github.com/WilliamAlmeida/support-pet/issues"
   },
-  "homepage": "https://github.com/SEU_USUARIO/support-pet#readme",
+  "homepage": "https://github.com/WilliamAlmeida/support-pet#readme",
   "devDependencies": {
-    "terser": "^5.0.0"
+    "jsdom": "^25.0.0",
+    "terser": "^5.0.0",
+    "vitest": "^2.1.0"
   }
 }
